@@ -1,0 +1,21 @@
+{
+  "updateTime": "2026-05-10 17:30",
+  "members": [
+    { "group": "小帅", "name": "小帅", "product_line": "家电", "business_type": "维修", "target": 235, "orders": 159, "cost": 32.5 },
+    { "group": "小帅", "name": "孙娟", "product_line": "数码", "business_type": "维修", "target": 235, "orders": 162, "cost": 33.1 },
+    { "group": "小帅", "name": "黄河", "product_line": "家电", "business_type": "安装", "target": 235, "orders": 148, "cost": 31.8 },
+    { "group": "小帅", "name": "毛涛", "product_line": "家居", "business_type": "维修", "target": 235, "orders": 170, "cost": 34.2 },
+    { "group": "毛涛", "name": "黄河", "product_line": "家电", "business_type": "维修", "target": 235, "orders": 180, "cost": 35.0 },
+    { "group": "毛涛", "name": "毛涛", "product_line": "数码", "business_type": "安装", "target": 235, "orders": 155, "cost": 32.0 },
+    { "group": "张程富", "name": "杨玲", "product_line": "家居", "business_type": "维修", "target": 235, "orders": 140, "cost": 30.5 },
+    { "group": "张程富", "name": "雨蔓", "product_line": "家电", "business_type": "安装", "target": 100, "orders": 90, "cost": 28.8 },
+    { "group": "张程富", "name": "俊钦", "product_line": "数码", "business_type": "维修", "target": 235, "orders": 168, "cost": 33.6 },
+    { "group": "张程富", "name": "王敏", "product_line": "家居", "business_type": "维修", "target": 235, "orders": 152, "cost": 31.2 },
+    { "group": "张程富", "name": "张程富", "product_line": "家电", "business_type": "安装", "target": 235, "orders": 175, "cost": 34.8 },
+    { "group": "徐显杰", "name": "何鑫", "product_line": "数码", "business_type": "维修", "target": 235, "orders": 165, "cost": 33.0 },
+    { "group": "徐显杰", "name": "徐显杰", "product_line": "家居", "business_type": "安装", "target": 235, "orders": 149, "cost": 31.5 },
+    { "group": "品牌词", "name": "黄河", "product_line": "品牌", "business_type": "推广", "target": 130, "orders": 68, "cost": 32.5 },
+    { "group": "品牌组", "name": "刘燕", "product_line": "品牌", "business_type": "内容", "target": 100, "orders": 55, "cost": 32.5 },
+    { "group": "房屋组", "name": "雨蔓", "product_line": "房屋", "business_type": "销售", "target": 100, "orders": 78, "cost": 32.5 }
+  ]
+}

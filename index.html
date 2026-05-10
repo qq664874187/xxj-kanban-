@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>品牌成本实时看板 · 可多选切片器</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: rgba(30,41,59,0.9);
+            --card-border: rgba(255,255,255,0.08);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent2: #a78bfa;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --progress-bg: rgba(255,255,255,0.1);
+            --shadow: 0 10px 30px rgba(0,0,0,0.4);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{
+            font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+            background:linear-gradient(160deg,#0f172a 0%,#1e293b 100%);
+            color:var(--text-primary);min-height:100vh;padding:30px 20px;line-height:1.5;
+        }
+        .dashboard{max-width:1400px;margin:0 auto;}
+
+        /* 头部 */
+        .header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-bottom:30px;}
+        .header-left h1{font-size:32px;font-weight:700;background:linear-gradient(to right,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.5px;}
+        .header-left .subtitle{color:var(--text-secondary);font-size:14px;margin-top:5px;}
+        .header-right{display:flex;align-items:center;gap:20px;}
+        .update-time{background:var(--card-bg);border:1px solid var(--card-border);border-radius:30px;padding:8px 18px;font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;}
+        .dot-live{width:9px;height:9px;border-radius:50%;background:#10b981;box-shadow:0 0 10px #10b981;animation:pulse 2s infinite;}
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.2);}}
+        .refresh-btn{background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);color:var(--accent);padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:600;font-size:14px;transition:0.25s;}
+        .refresh-btn:hover{background:rgba(56,189,248,0.25);}
+
+        /* 切片器 */
+        .slicers{display:flex;flex-wrap:wrap;gap:25px;margin-bottom:25px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:18px 24px;align-items:flex-start;}
+        .slicer-group{display:flex;flex-direction:column;gap:10px;}
+        .slicer-label{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+        .slicer-options{display:flex;flex-wrap:wrap;gap:8px;}
+        .slicer-tag{padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text-secondary);transition:0.25s;user-select:none;}
+        .slicer-tag:hover{background:rgba(56,189,248,0.1);border-color:rgba(56,189,248,0.3);color:white;}
+        .slicer-tag.active{background:rgba(56,189,248,0.2);border-color:#38bdf8;color:#38bdf8;font-weight:600;box-shadow:0 0 12px rgba(56,189,248,0.2);}
+        .clear-all{margin-left:auto;align-self:center;color:var(--text-secondary);font-size:13px;cursor:pointer;background:none;border:none;text-decoration:underline;padding:5px;}
+        .clear-all:hover{color:white;}
+
+        /* 概览卡片 */
+        .summary-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:30px;}
+        .summary-card{background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid var(--card-border);border-radius:var(--radius);padding:22px 24px;transition:0.25s;position:relative;overflow:hidden;}
+        .summary-card:hover{transform:translateY(-4px);box-shadow:0 15px 30px rgba(0,0,0,0.5);border-color:rgba(56,189,248,0.3);}
+        .summary-card .icon{width:45px;height:45px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:15px;}
+        .icon-blue{background:rgba(56,189,248,0.15);color:#38bdf8;}
+        .icon-green{background:rgba(16,185,129,0.15);color:#10b981;}
+        .icon-purple{background:rgba(167,139,250,0.15);color:#a78bfa;}
+        .icon-amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+        .card-label{font-size:13px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+        .card-value{font-size:34px;font-weight:700;letter-spacing:-1px;}
+        .card-value .unit{font-size:16px;font-weight:500;color:var(--text-secondary);margin-left:4px;}
+
+        /* 空状态 */
+        .empty-state{text-align:center;padding:60px 20px;color:var(--text-secondary);}
+        .empty-state .icon-big{font-size:48px;margin-bottom:16px;opacity:0.7;}
+        .empty-state p{font-size:16px;}
+
+        /* 小组网格 */
+        .section-title{font-size:20px;font-weight:600;margin:30px 0 20px;display:flex;align-items:center;gap:10px;}
+        .section-title::after{content:'';flex:1;height:1px;background:var(--card-border);}
+        .group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-bottom:25px;}
+        .group-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:20px;transition:0.25s;}
+        .group-card:hover{border-color:rgba(56,189,248,0.2);box-shadow:0 10px 25px rgba(0,0,0,0.5);}
+        .group-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+        .group-name{font-weight:700;font-size:18px;display:flex;align-items:center;gap:10px;}
+        .group-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.3px;}
+        .badge-blue{background:rgba(56,189,248,0.2);color:#38bdf8;}
+        .badge-purple{background:rgba(167,139,250,0.2);color:#a78bfa;}
+        .badge-orange{background:rgba(251,146,60,0.2);color:#fb923c;}
+        .badge-emerald{background:rgba(52,211,153,0.2);color:#34d399;}
+        .badge-red{background:rgba(248,113,113,0.2);color:#f87171;}
+        .badge-cyan{background:rgba(6,182,212,0.2);color:#06b6d4;}
+        .badge-yellow{background:rgba(250,204,21,0.2);color:#facc15;}
+
+        .member-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+        .member-row:last-child{border-bottom:none;}
+        .member-name{font-weight:500;min-width:70px;}
+        .member-stats{display:flex;gap:15px;font-size:13px;color:var(--text-secondary);}
+        .member-progress{flex:1;margin-left:20px;display:flex;align-items:center;gap:8px;}
+        .mini-bar{flex:1;height:6px;background:var(--progress-bg);border-radius:10px;overflow:hidden;}
+        .mini-bar-fill{height:100%;border-radius:10px;transition:width 1s ease;}
+        .fill-high{background:linear-gradient(90deg,#10b981,#34d399);}
+        .fill-mid{background:linear-gradient(90deg,#f59e0b,#fbbf24);}
+        .fill-low{background:linear-gradient(90deg,#ef4444,#f87171);}
+        .mini-percent{font-weight:700;font-size:13px;width:50px;text-align:right;}
+        .text-green{color:#34d399;}.text-amber{color:#fbbf24;}.text-red{color:#f87171;}
+
+        /* 表格 */
+        .table-container{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);overflow:hidden;margin-top:30px;}
+        .table-header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--card-border);}
+        .table-header h3{font-size:18px;}
+        .search-input{background:rgba(255,255,255,0.05);border:1px solid var(--card-border);color:white;padding:8px 16px;border-radius:20px;width:220px;outline:none;}
+        .search-input:focus{border-color:var(--accent);background:rgba(56,189,248,0.05);}
+        table{width:100%;border-collapse:collapse;}
+        th{text-align:left;padding:14px 20px;font-weight:600;font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--card-border);cursor:pointer;}
+        th:hover{color:white;}
+        td{padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.03);}
+        tr:hover td{background:rgba(255,255,255,0.02);}
+        .progress-cell{display:flex;align-items:center;gap:12px;}
+        .progress-bar{width:120px;height:7px;background:var(--progress-bg);border-radius:10px;overflow:hidden;}
+
+        @media(max-width:768px){
+            .header{flex-direction:column;align-items:flex-start;}
+            .summary-cards{grid-template-columns:1fr;}
+            .group-grid{grid-template-columns:1fr;}
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <!-- 头部 -->
+    <div class="header">
+        <div class="header-left">
+            <h1>⚡ 品牌成本实时看板</h1>
+            <div class="subtitle">多选切片器 · 数据与页面分离</div>
+        </div>
+        <div class="header-right">
+            <div class="update-time">
+                <span class="dot-live"></span>
+                <span id="updateTimestamp">数据加载中...</span>
+            </div>
+            <button class="refresh-btn" onclick="location.reload()">🔄 刷新数据</button>
+        </div>
+    </div>
+
+    <!-- 切片器容器 -->
+    <div class="slicers" id="slicerContainer"></div>
+
+    <!-- 概览卡片 -->
+    <div class="summary-cards" id="summaryCards"></div>
+
+    <!-- 小组卡片 -->
+    <div class="section-title">👥 小组进度总览</div>
+    <div class="group-grid" id="groupCards"></div>
+
+    <!-- 明细表格 -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3>📋 全部人员明细</h3>
+            <input type="text" class="search-input" placeholder="搜索姓名或小组..." id="searchInput">
+        </div>
+        <div style="overflow-x:auto;">
+            <table id="detailTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ===================== 配置区（你可以自由修改） =====================
+    // 切片器字段列表：key 对应 data.json 里每个对象的属性名，label 是显示名称
+    const SLICER_FIELDS = [
+        { key: 'group', label: '小组' },
+        { key: 'product_line', label: '产品组' },
+        { key: 'business_type', label: '业务线' }
+        // 你可以随时增减，比如 { key: 'region', label: '大区' }
+    ];
+
+    // 表格列配置：key 对应数据字段，label 是表头，sortable 是否可排序
+    const TABLE_COLUMNS = [
+        { key: 'group', label: '小组', sortable: true },
+        { key: 'name', label: '人员', sortable: true },
+        { key: 'product_line', label: '产品组', sortable: true },
+        { key: 'business_type', label: '业务线', sortable: true },
+        { key: 'target', label: '日目标', sortable: true },
+        { key: 'orders', label: '实时订单', sortable: true },
+        { key: 'cost', label: '实时成本', sortable: true }
+    ];
+
+    // 全局数据 & 筛选状态
+    let allData = [];
+    let updateTime = '';
+    // activeFilters: { [fieldKey]: [选中的值数组] }，空数组表示全选
+    let activeFilters = {};
+
+    // ===================== 加载数据 =====================
+    async function loadData() {
+        try {
+            const response = await fetch('data.json');
+            if (!response.ok) throw new Error('数据加载失败');
+            const json = await response.json();
+            allData = json.members || [];
+            updateTime = json.updateTime || '';
+            document.getElementById('updateTimestamp').textContent = `数据更新 ${updateTime}`;
+            initFiltersFromURL();
+            buildSlicers();
+            applyFiltersAndRender();
+        } catch (err) {
+            console.error(err);
+            document.getElementById('updateTimestamp').textContent = '⚠️ 数据加载失败';
+        }
+    }
+
+    // 从 URL 参数恢复筛选状态
+    function initFiltersFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        activeFilters = {};
+        SLICER_FIELDS.forEach(f => {
+            const val = params.get(f.key);
+            activeFilters[f.key] = val ? val.split(',') : [];
+        });
+    }
+
+    // 更新 URL 参数
+    function updateURLParams() {
+        const params = new URLSearchParams();
+        Object.entries(activeFilters).forEach(([key, values]) => {
+            if (values.length > 0) params.set(key, values.join(','));
+        });
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+
+    // ===================== 切片器构建 =====================
+    function buildSlicers() {
+        const container = document.getElementById('slicerContainer');
+        container.innerHTML = '';
+
+        SLICER_FIELDS.forEach(field => {
+            const values = [...new Set(allData.map(item => item[field.key]))].sort();
+            if (values.length === 0) return;
+
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'slicer-group';
+            groupDiv.innerHTML = `<span class="slicer-label">${field.label}</span>`;
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'slicer-options';
+
+            const selectedVals = activeFilters[field.key] || [];
+
+            values.forEach(val => {
+                const tag = document.createElement('span');
+                tag.className = 'slicer-tag';
+                tag.textContent = val;
+                tag.dataset.field = field.key;
+                tag.dataset.value = val;
+
+                // 高亮逻辑：如果 selectedVals 为空（全选）则全部高亮；否则仅选中值高亮
+                if (selectedVals.length === 0) {
+                    tag.classList.add('active');
+                } else if (selectedVals.includes(val)) {
+                    tag.classList.add('active');
+                }
+
+                tag.addEventListener('click', () => toggleFilter(field.key, val));
+                optionsDiv.appendChild(tag);
+            });
+
+            groupDiv.appendChild(optionsDiv);
+            container.appendChild(groupDiv);
+        });
+
+        // 清除所有筛选按钮
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'clear-all';
+        clearBtn.textContent = '清除所有筛选';
+        clearBtn.addEventListener('click', clearAllFilters);
+        container.appendChild(clearBtn);
+    }
+
+    // 切换筛选值（多选逻辑）
+    function toggleFilter(fieldKey, value) {
+        if (!activeFilters[fieldKey]) activeFilters[fieldKey] = [];
+
+        const current = activeFilters[fieldKey];
+        if (current.includes(value)) {
+            // 移除该值
+            activeFilters[fieldKey] = current.filter(v => v !== value);
+        } else {
+            // 添加该值
+            activeFilters[fieldKey] = [...current, value];
+        }
+
+        updateURLParams();
+        buildSlicers();        // 重新绘制切片器UI
+        applyFiltersAndRender();
+    }
+
+    function clearAllFilters() {
+        SLICER_FIELDS.forEach(f => activeFilters[f.key] = []);
+        updateURLParams();
+        buildSlicers();
+        applyFiltersAndRender();
+    }
+
+    // 根据 activeFilters 获取过滤后的数据
+    function getFilteredData() {
+        return allData.filter(item => {
+            return SLICER_FIELDS.every(field => {
+                const selected = activeFilters[field.key];
+                if (!selected || selected.length === 0) return true; // 全选
+                return selected.includes(item[field.key]);
+            });
+        });
+    }
+
+    // ===================== 渲染概览卡片 =====================
+    function renderSummaryCards(data) {
+        const totalTarget = data.reduce((s, m) => s + (m.target || 0), 0);
+        const totalOrders = data.reduce((s, m) => s + (m.orders || 0), 0);
+        const avgCost = data.length ? (data.reduce((s, m) => s + (m.cost || 0), 0) / data.length).toFixed(1) : 0;
+        const overallProgress = totalTarget ? ((totalOrders / totalTarget) * 100).toFixed(1) : 0;
+
+        document.getElementById('summaryCards').innerHTML = `
+            <div class="summary-card"><div class="icon icon-blue">🎯</div><div class="card-label">总日目标</div><div class="card-value">${totalTarget.toLocaleString()}<span class="unit">单</span></div></div>
+            <div class="summary-card"><div class="icon icon-green">✅</div><div class="card-label">实时订单</div><div class="card-value">${totalOrders.toLocaleString()}<span class="unit">单</span></div></div>
+            <div class="summary-card"><div class="icon icon-purple">💰</div><div class="card-label">平均成本</div><div class="card-value">${avgCost}<span class="unit">元/单</span></div></div>
+            <div class="summary-card"><div class="icon icon-amber">📈</div><div class="card-label">整体进度</div><div class="card-value">${overallProgress}%</div></div>
+        `;
+    }
+
+    // ===================== 小组卡片 =====================
+    function renderGroupCards(data) {
+        const container = document.getElementById('groupCards');
+        if (data.length === 0) {
+            container.innerHTML = `<div class="empty-state"><div class="icon-big">📭</div><p>当前筛选条件下无匹配数据</p><p style="font-size:14px;color:var(--text-secondary);">请调整上方切片器选项</p></div>`;
+            return;
+        }
+
+        const groups = {};
+        data.forEach(m => {
+            const g = m.group || '未分组';
+            if (!groups[g]) groups[g] = { members: [], totalTarget: 0, totalOrders: 0 };
+            groups[g].members.push(m);
+            groups[g].totalTarget += m.target || 0;
+            groups[g].totalOrders += m.orders || 0;
+        });
+
+        const badgeMap = {
+            '小帅': 'badge-blue', '毛涛': 'badge-purple', '张程富': 'badge-orange',
+            '徐显杰': 'badge-emerald', '品牌词': 'badge-red', '品牌组': 'badge-cyan', '房屋组': 'badge-yellow'
+        };
+
+        container.innerHTML = Object.entries(groups).map(([gname, gdata]) => {
+            const gprog = gdata.totalTarget ? ((gdata.totalOrders / gdata.totalTarget) * 100).toFixed(1) : 0;
+            return `
+            <div class="group-card">
+                <div class="group-header">
+                    <div class="group-name"><span>${gname}</span><span class="group-badge ${badgeMap[gname] || 'badge-blue'}">${gdata.members.length}人</span></div>
+                    <div style="font-size:13px; color:var(--text-secondary);">组进度 <strong>${gprog}%</strong></div>
+                </div>
+                ${gdata.members.map(m => {
+                    const prog = m.target ? ((m.orders / m.target) * 100).toFixed(1) : 0;
+                    const fillClass = prog > 90 ? 'fill-high' : prog > 60 ? 'fill-mid' : 'fill-low';
+                    const textClass = prog > 90 ? 'text-green' : prog > 60 ? 'text-amber' : 'text-red';
+                    return `<div class="member-row">
+                        <span class="member-name">${m.name}</span>
+                        <div class="member-stats"><span>目标 ${m.target}</span><span>订单 ${m.orders}</span></div>
+                        <div class="member-progress"><div class="mini-bar"><div class="mini-bar-fill ${fillClass}" style="width:${Math.min(prog,100)}%;"></div></div><span class="mini-percent ${textClass}">${prog}%</span></div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        }).join('');
+    }
+
+    // ===================== 动态表格 =====================
+    function renderTableHead() {
+        const thead = document.getElementById('tableHead');
+        let html = '<tr>';
+        TABLE_COLUMNS.forEach(col => {
+            html += `<th data-sort="${col.key}" ${col.sortable ? '' : 'style="cursor:default;"'}>${col.label} ▾</th>`;
+        });
+        html += '<th>当日进度</th></tr>';
+        thead.innerHTML = html;
+
+        // 绑定排序事件
+        thead.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const sortKey = th.dataset.sort;
+                const filtered = getFilteredData();
+                const sorted = [...filtered].sort((a, b) => {
+                    const valA = a[sortKey] !== undefined ? a[sortKey] : '';
+                    const valB = b[sortKey] !== undefined ? b[sortKey] : '';
+                    if (typeof valA === 'string') return valA.localeCompare(valB);
+                    return valA - valB;
+                });
+                renderTableBody(sorted);
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                if (searchTerm) applySearchFilter(searchTerm);
+            });
+        });
+    }
+
+    function renderTableBody(data) {
+        const tbody = document.getElementById('tableBody');
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${TABLE_COLUMNS.length + 1}" class="empty-state"><div class="icon-big">📋</div><p>无匹配记录</p></td></tr>`;
+            return;
+        }
+        tbody.innerHTML = data.map(m => {
+            const prog = m.target ? ((m.orders / m.target) * 100).toFixed(1) : 0;
+            const fillClass = prog > 90 ? 'fill-high' : prog > 60 ? 'fill-mid' : 'fill-low';
+            const textClass = prog > 90 ? 'text-green' : prog > 60 ? 'text-amber' : 'text-red';
+            let row = '<tr>';
+            TABLE_COLUMNS.forEach(col => {
+                const val = m[col.key] !== undefined ? m[col.key] : '';
+                if (col.key === 'group') {
+                    row += `<td><span class="group-badge badge-blue">${val}</span></td>`;
+                } else {
+                    row += `<td>${val}</td>`;
+                }
+            });
+            row += `<td><div class="progress-cell"><div class="progress-bar"><div class="mini-bar-fill ${fillClass}" style="width:${Math.min(prog,100)}%;"></div></div><span class="${textClass}" style="font-weight:600;">${prog}%</span></div></td></tr>`;
+            return row;
+        }).join('');
+    }
+
+    // 搜索过滤
+    function setupSearch() {
+        const input = document.getElementById('searchInput');
+        input.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            applySearchFilter(term);
+        });
+    }
+
+    function applySearchFilter(term) {
+        document.querySelectorAll('#tableBody tr').forEach(tr => {
+            const text = tr.textContent?.toLowerCase() || '';
+            tr.style.display = text.includes(term) ? '' : 'none';
+        });
+    }
+
+    // ===================== 应用筛选并渲染 =====================
+    function applyFiltersAndRender() {
+        const filtered = getFilteredData();
+        renderSummaryCards(filtered);
+        renderGroupCards(filtered);
+        renderTableBody(filtered);
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        if (searchTerm) applySearchFilter(searchTerm);
+    }
+
+    // ===================== 启动 =====================
+    window.addEventListener('DOMContentLoaded', () => {
+        renderTableHead(); // 先绘制表头
+        loadData();        // 异步加载数据
+        setupSearch();
+    });
+</script>
+</body>
+</html>
