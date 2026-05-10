@@ -12,7 +12,7 @@
     { "group": "张程富", "name": "俊钦", "product_line": "数码", "business_type": "维修", "target": 235, "orders": 168, "cost": 33.6 },
     { "group": "张程富", "name": "王敏", "product_line": "家居", "business_type": "维修", "target": 235, "orders": 152, "cost": 31.2 },
     { "group": "张程富", "name": "张程富", "product_line": "家电", "business_type": "安装", "target": 235, "orders": 175, "cost": 34.8 },
-    { "group": "徐显杰", "name": "何鑫", "product_line": "数码", "business_type": "维修", "target": 235, "orders": 165, "cost": 33.0 },
+    { "group": "徐显杰", "name": "何鑫", "product_line": "数码", "business_type": "维修", "target": 235, "orders": 1000, "cost": 33.0 },
     { "group": "徐显杰", "name": "徐显杰", "product_line": "家居", "business_type": "安装", "target": 235, "orders": 149, "cost": 31.5 },
     { "group": "品牌词", "name": "黄河", "product_line": "品牌", "business_type": "推广", "target": 130, "orders": 68, "cost": 32.5 },
     { "group": "品牌组", "name": "刘燕", "product_line": "品牌", "business_type": "内容", "target": 100, "orders": 55, "cost": 32.5 },
